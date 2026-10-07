@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Maga Resto-Bar - Menú Digital</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- QRCode JS Library for QR modal -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            gold: '#D4AF37',
+                            dark: '#121212',
+                            card: '#1E1E1E',
+                            accent: '#C59B27',
+                            red: '#9B1C1C',
+                            surface: '#2A2A2A'
+                        }
+                    },
+                    fontFamily: {
+                        logo: ['"Alex Brush"', 'cursive'],
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['Montserrat', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .logo-font {
+            font-family: 'Alex Brush', cursive;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            background-color: #0d0d0d;
+            color: #f3f4f6;
+            font-family: 'Montserrat', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass-header {
+            background: rgba(18, 18, 18, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .badge-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .6; }
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-neutral-950 text-neutral-100 antialiased pb-24">
+
+    <!-- Sticky Top Navigation -->
+    <header class="sticky top-0 z-40 glass-header border-b border-neutral-800 shadow-xl">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="scrollToTop()">
+                <div class="w-12 h-12 rounded-full bg-white border-2 border-brand-gold flex flex-col items-center justify-center p-1 shadow-md text-black overflow-hidden transform transition duration-300 hover:scale-105">
+                    <span class="logo-font text-xl leading-none text-black pt-1">La Maga</span>
+                    <span class="text-[7px] font-bold uppercase tracking-wider text-neutral-700 -mt-1">Resto-Bar</span>
+                </div>
+                <div>
+                    <h1 class="logo-font text-2xl sm:text-3xl font-bold tracking-wide text-brand-gold leading-none">La Maga</h1>
+                    <p class="text-[10px] tracking-widest text-neutral-400 uppercase font-semibold">Resto - Bar</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons (Admin & QR) -->
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleAdminMode()" id="admin-toggle-btn" title="Modo Edición de Precios" class="px-3 py-1.5 text-xs font-semibold rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300 hover:text-brand-gold hover:border-brand-gold transition flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-pen-to-square text-xs">
+                    </i>
+                    <span id="admin-btn-text" class="hidden sm:inline">Editar Precios</span>
+                </button>
+                <button onclick="openQRModal()" title="Generar Menú QR" class="p-2 rounded-full border border-neutral-700 bg-neutral-900 text-brand-gold hover:bg-neutral-800 transition shadow-sm">
+                    <i class="fa-solid fa-qrcode text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Schedule & Open Indicator Bar -->
+        <div class="bg-neutral-900/90 border-t border-neutral-800/80 px-4 py-1.5">
+            <div class="max-w-4xl mx-auto flex items-center justify-between text-[11px] text-neutral-400">
+                <div class="flex items-center space-x-2">
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 badge-pulse"></span>
+                    <span class="font-medium text-neutral-200">Abierto Hoy</span>
+                    <span class="text-neutral-500 hidden sm:inline">|</span>
+                    <span class="hidden sm:inline text-neutral-400"><i class="fa-regular fa-clock mr-1"></i>Mediodía & Noche</span>
+                </div>
+                <div class="text-neutral-400 flex items-center gap-2">
+                    <span class="hidden md:inline"><i class="fa-solid fa-utensils mr-1 text-brand-gold"></i>Menú Digital Interactivo</span>
+                    <span id="edit-indicator" class="hidden bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider border border-amber-500/30">
+                        Modo Edición Activado
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="max-w-4xl mx-auto px-4 pt-4 flex-1 w-full">
+
+        <!-- Search and Quick Filter Bar -->
+        <div class="mb-5 space-y-3">
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+                <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="Buscar platos, bebidas, pastas, cafés..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-2.5 pl-10 pr-10 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-brand-gold transition shadow-inner">
+                <button id="clear-search" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Categories Horizontal Slider -->
+            <div class="flex items-center space-x-2 overflow-x-auto hide-scrollbar py-1 text-xs select-none" id="category-pills">
+                <!-- Javascript will inject category buttons here -->
+            </div>
+        </div>
+
+        <!-- Admin Control Panel Banner (Visible only in edit mode) -->
+        <div id="admin-bar" class="hidden mb-6 p-4 rounded-xl bg-amber-950/40 border border-amber-600/40 text-amber-200 text-xs shadow-lg space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 font-bold text-sm">
+                    <i class="fa-solid fa-sliders text-amber-400"></i>
+                    <span>Panel de Gestión de Precios</span>
+                </div>
+                <button onclick="saveMenuToStorage()" class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-black font-bold rounded-lg transition shadow">
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Cambios
+                </button>
+            </div>
+            <p class="text-neutral-300">
+                Pasa el ratón o toca sobre el precio de cualquier plato para editarlo directamente, o pulsa el botón de edición individual. También puedes restablecer los valores originales.
+            </p>
+            <div class="flex flex-wrap gap-2 pt-1">
+                <button onclick="openAddNewItemModal()" class="px-2.5 py-1 bg-emerald-700/60 hover:bg-emerald-600 text-emerald-100 rounded border border-emerald-500/40 font-medium">
+                    <i class="fa-solid fa-plus mr-1"></i> Agregar Nuevo Item
+                </button>
+                <button onclick="resetMenuToDefaults()" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded border border-neutral-700">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> Restablecer Precios Originales
+                </button>
+            </div>
+        </div>
+
+        <!-- Menu Categories Display -->
+        <div id="menu-sections-container" class="space-y-8">
+            <!-- Dynamic Menu content will render here -->
+        </div>
+
+        <!-- No Results Fallback -->
+        <div id="no-results" class="hidden text-center py-16 text-neutral-500 space-y-3">
+            <i class="fa-solid fa-utensils text-4xl text-neutral-700"></i>
+            <p class="text-base font-medium">No encontramos platos o bebidas con ese nombre.</p>
+            <button onclick="clearSearch()" class="px-4 py-1.5 text-xs bg-neutral-800 hover:bg-neutral-700 text-brand-gold rounded-full transition">Ver todo el menú</button>
+        </div>
+
+    </main>
+
+    <!-- Floating Bottom Navigation & Order Drawer Button -->
+    <div class="fixed bottom-0 left-0 right-0 z-30 glass-header border-t border-neutral-800 py-3 px-4 shadow-2xl">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-brand-gold/10 border border-brand-gold/30 flex items-center justify-center text-brand-gold font-bold">
+                    <i class="fa-solid fa-phone"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-neutral-400">Atención en mesa</p>
+                    <p class="text-xs font-bold text-neutral-200">Consulte al mozo / moza</p>
+                </div>
+            </div>
+
+            <button onclick="openOrderDrawer()" class="relative px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-sm shadow-lg shadow-amber-500/20 flex items-center space-x-2 transition transform active:scale-95">
+                <i class="fa-solid fa-receipt"></i>
+                <span>Mi Selección</span>
+                <span id="order-badge" class="ml-1 bg-black text-amber-400 text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL: QR Code Generator -->
+    <div id="qr-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl relative">
+            <button onclick="closeQRModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="w-16 h-16 mx-auto rounded-full bg-white border-2 border-brand-gold flex flex-col items-center justify-center p-1 text-black shadow-md">
+                <span class="logo-font text-2xl leading-none pt-1">La Maga</span>
+            </div>
+            <h3 class="text-xl font-bold text-neutral-100 font-serif">Código QR del Menú</h3>
+            <p class="text-xs text-neutral-400">Escanea este código con la cámara de tu celular para acceder directamente al menú digital.</p>
+            
+            <div id="qrcode-container" class="bg-white p-4 rounded-xl inline-block mx-auto border-4 border-brand-gold shadow-lg"></div>
+
+            <div class="pt-2 flex justify-center gap-2">
+                <button onclick="printMenuQR()" class="w-full py-2 bg-brand-gold text-black font-bold rounded-xl text-xs hover:bg-amber-400 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> Imprimir QR
+                </button>
+                <button onclick="closeQRModal()" class="w-full py-2 bg-neutral-800 text-neutral-300 font-bold rounded-xl text-xs hover:bg-neutral-700 transition">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Order Drawer / Summary -->
+    <div id="order-drawer" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex justify-end">
+        <div class="bg-neutral-900 border-l border-neutral-800 w-full max-w-md h-full flex flex-col justify-between p-5 shadow-2xl">
+            <div>
+                <div class="flex items-center justify-between pb-4 border-b border-neutral-800">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-clipboard-list text-brand-gold text-lg"></i>
+                        <h3 class="font-serif font-bold text-lg text-neutral-100">Resumen de Mesa</h3>
+                    </div>
+                    <button onclick="closeOrderDrawer()" class="text-neutral-400 hover:text-white">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="py-3 border-b border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
+                    <span>Lista de ítems seleccionados</span>
+                    <button onclick="clearOrder()" class="text-rose-400 hover:underline"><i class="fa-solid fa-trash mr-1"></i> Vaciar</button>
+                </div>
+
+                <!-- Order List items -->
+                <div id="order-items-list" class="py-4 space-y-3 max-h-[55vh] overflow-y-auto hide-scrollbar">
+                    <!-- Items inserted here via JS -->
+                </div>
+            </div>
+
+            <div class="border-t border-neutral-800 pt-4 space-y-3">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-neutral-400">Total estimado:</span>
+                    <span id="order-total-price" class="text-xl font-bold text-brand-gold">$0</span>
+                </div>
+                <p class="text-[11px] text-neutral-500 italic text-center">
+                    * Muestra los valores calculados de tu mesa para coordinar el pedido con el mozo.
+                </p>
+                <button onclick="closeOrderDrawer()" class="w-full py-3 bg-brand-gold hover:bg-amber-400 text-black font-bold rounded-xl text-sm transition">
+                    Volver al Menú
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Add / Edit Item -->
+    <div id="edit-item-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl relative">
+            <button onclick="closeEditModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 id="modal-title" class="text-lg font-bold text-neutral-100 font-serif">Editar Ítem del Menú</h3>
+            
+            <form id="item-form" onsubmit="saveItemForm(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="form-item-id">
+                
+                <div>
+                    <label class="block text-neutral-400 mb-1">Nombre del producto</label>
+                    <input type="text" id="form-item-title" required class="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-2.5 text-neutral-100 focus:outline-none focus:border-brand-gold">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-neutral-400 mb-1">Categoría</label>
+                        <select id="form-item-category" class="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-2.5 text-neutral-100 focus:outline-none focus:border-brand-gold">
+                            <option value="entradas">Entradas</option>
+                            <option value="principales">Platos Principales</option>
+                            <option value="sandwiches">Sándwiches</option>
+                            <option value="pastas">Pastas</option>
+                            <option value="postres">Postres</option>
+                            <option value="cafeteria">Cafetería</option>
+                            <option value="bebidas">Bebidas</option>
+                            <option value="vinos">Vinos</option>
+                            <option value="licores">Whisky y Licores</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-neutral-400 mb-1">Precio ($ ARS)</label>
+                        <input type="number" step="0.01" id="form-item-price" placeholder="Ej: 4500 o 0 si es consultar" class="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-2.5 text-neutral-100 focus:outline-none focus:border-brand-gold">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-neutral-400 mb-1">Descripción / Variedades / Salsas</label>
+                    <textarea id="form-item-desc" rows="2" placeholder="Ej: Con fritas o ensalada. Incluye salsas..." class="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-2.5 text-neutral-100 focus:outline-none focus:border-brand-gold"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-neutral-400 mb-1">URL de Imagen (Opcional)</label>
+                    <input type="url" id="form-item-image" placeholder="https://..." class="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-2.5 text-neutral-100 focus:outline-none focus:border-brand-gold">
+                </div>
+
+                <div class="flex items-center gap-4 pt-1">
+                    <label class="flex items-center space-x-2 cursor-pointer text-neutral-300">
+                        <input type="checkbox" id="form-item-consult" class="rounded bg-neutral-800 border-neutral-700 text-brand-gold focus:ring-0">
+                        <span>Mostrar como "Consultar Precio"</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer text-neutral-300">
+                        <input type="checkbox" id="form-item-stock" class="rounded bg-neutral-800 border-neutral-700 text-brand-gold focus:ring-0">
+                        <span>Disponible (En Stock)</span>
+                    </label>
+                </div>
+
+                <div class="pt-3 flex gap-2">
+                    <button type="button" onclick="deleteCurrentItem()" id="btn-delete-item" class="px-3 py-2 bg-rose-900/60 hover:bg-rose-800 text-rose-200 rounded-lg font-bold transition border border-rose-700/50">
+                        Eliminar
+                    </button>
+                    <div class="flex-1 flex gap-2">
+                        <button type="button" onclick="closeEditModal()" class="w-full py-2 bg-neutral-800 text-neutral-300 font-bold rounded-lg hover:bg-neutral-700 transition">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="w-full py-2 bg-brand-gold text-black font-bold rounded-lg hover:bg-amber-400 transition">
+                            Guardar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        const DEFAULT_MENU_DATA = [
+            // ENTRADAS
+            { id: 'e1', cat: 'entradas', title: 'Empanadas', desc: 'Carne, Pollo o Queso y Jamón horneadas', price: 1500, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=500&q=80' },
+            { id: 'e2', cat: 'entradas', title: 'Tabla de Fiambre', desc: 'Salami, jamón cocido, queso, aceitunas y pan artesanal', price: 9500, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1541529086526-db283c563270?auto=format&fit=crop&w=500&q=80' },
+            { id: 'e3', cat: 'entradas', title: 'Rabas Crispy', desc: 'Anillos de calamar rebozados dorados con limón y aderezo', price: 8200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?auto=format&fit=crop&w=500&q=80' },
+            { id: 'e4', cat: 'entradas', title: 'Chorizo y Queso', desc: 'Chorizo a la parrilla servido con provolone fundido', price: 5400, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=500&q=80' },
+            { id: 'e5', cat: 'entradas', title: 'Muzzarella a la Milanesa (Mucci)', desc: 'Bastones de muzzarella dorados con salsa fileto', price: 5200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1531510014117-0a700f2143b5?auto=format&fit=crop&w=500&q=80' },
+            { id: 'e6', cat: 'entradas', title: 'Papas de Copetín', desc: 'Papas en bastón crocantes ideales para picar', price: 3800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=500&q=80' },
+            { id: 'e7', cat: 'entradas', title: 'Porción de Fritas (Sin Salsa)', desc: 'Papas fritas tradicionales doradas', price: 4200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=500&q=80' },
+            { id: 'e8', cat: 'entradas', title: 'Porción de Fritas (Con Salsa)', desc: 'Con salsa cheddar, provenzal o alioli (consultar variantes)', price: 4900, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1585109649139-366815a0d713?auto=format&fit=crop&w=500&q=80' },
+
+            // PLATOS PRINCIPALES
+            { id: 'p1', cat: 'principales', title: 'Plato del Día', desc: 'Especialidad seleccionada diariamente por el chef', price: 0, available: true, isConsult: true, img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=500&q=80' },
+            { id: 'p2', cat: 'principales', title: 'Bife de Chorizo c/ Guarnición', desc: 'Corte magro de res a las brasas con papas o ensalada', price: 11500, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=500&q=80' },
+            { id: 'p3', cat: 'principales', title: 'Bife con Salsa / A Caballo', desc: 'Servido con dos huevos fritos o salsa especial y guarnición', price: 12800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=500&q=80' },
+            { id: 'p4', cat: 'principales', title: 'Milanesa c/ Guarnición', desc: 'Clásica milanesa de nalga o pollo con fritas o puré', price: 8200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1599921841143-819065a5576f?auto=format&fit=crop&w=500&q=80' },
+            { id: 'p5', cat: 'principales', title: 'Milanesa Napolitana / A Caballo', desc: 'Con jamón, queso, salsa de tomate y orégano o 2 huevos fritos', price: 9500, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1606755962773-d324e0a13086?auto=format&fit=crop&w=500&q=80' },
+            { id: 'p6', cat: 'principales', title: 'Pollo Grillé c/ Guarnición', desc: 'Pechuga o muslo a la plancha perfumado con hierbas', price: 7900, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=500&q=80' },
+            { id: 'p7', cat: 'principales', title: 'Pollo con Salsa / A Caballo', desc: 'Con salsa verdeo, champiñones o a caballo con fritas', price: 8900, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=500&q=80' },
+            { id: 'p8', cat: 'principales', title: 'Filet de Merluza c/ Guarnición', desc: 'A la romana o a la plancha con puré o ensalada fresca', price: 8600, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=500&q=80' },
+            { id: 'p9', cat: 'principales', title: 'Ensalada Completa', desc: 'Lechuga, tomate, huevo, zanahoria, choclo, queso y pollo opcional', price: 6500, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=500&q=80' },
+            { id: 'p10', cat: 'principales', title: 'Hamburguesa al Plato c/ Guarnición', desc: 'Dos medallones de carne caseros con queso y papas fritas', price: 7800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80' },
+
+            // SANDWICHES
+            { id: 's1', cat: 'sandwiches', title: 'Tostado / Carlitito c/ Guarnición', desc: 'En pan miga o de molde con jamón cocido y queso fundido', price: 5400, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=500&q=80' },
+            { id: 's2', cat: 'sandwiches', title: 'Milanesa Simple c/ Guarnición', desc: 'Sandwich de milanesa en pan baguette con lechuga y tomate', price: 7200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?auto=format&fit=crop&w=500&q=80' },
+            { id: 's3', cat: 'sandwiches', title: 'Milanesa Completa c/ Guarnición', desc: 'Con jamón, queso, huevo frito, lechuga, tomate y fritas', price: 8800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=500&q=80' },
+            { id: 's4', cat: 'sandwiches', title: 'Hamburguesa Simple c/ Guarnición', desc: 'Medallón casero con queso tybo y lechuga/tomate', price: 6500, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=500&q=80' },
+            { id: 's5', cat: 'sandwiches', title: 'Hamburguesa Completa c/ Guarnición', desc: 'Con queso, panceta, huevo frito, lechuga y papas fritas', price: 8200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=500&q=80' },
+            { id: 's6', cat: 'sandwiches', title: 'Hamburguesa c/ Fritas', desc: 'Hamburguesa servida directamente con abundante porción de fritas', price: 7400, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=500&q=80' },
+            { id: 's7', cat: 'sandwiches', title: 'Milanesa c/ Fritas', desc: 'Clásica milanesa al pan con guarnición de papas fritas', price: 7800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=500&q=80' },
+
+            // PASTAS
+            { id: 'pa1', cat: 'pastas', title: 'Tallarines c/ Bolognesa', desc: 'Pastas caseras con salsa de carne picada y fileto tradicional', price: 7500, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1621996346565-e3def6166739?auto=format&fit=crop&w=500&q=80' },
+            { id: 'pa2', cat: 'pastas', title: 'Tallarines c/ Salsa a Elección', desc: 'Variedades: 4 Quesos, Roquefort, Tuco, Crema o Salsa Verde', price: 7900, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=500&q=80' },
+            { id: 'pa3', cat: 'pastas', title: 'Ñoquis c/ Bolognesa', desc: 'Ñoquis artesanales de papa servidos con sabrosa Bolognesa', price: 7400, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=500&q=80' },
+            { id: 'pa4', cat: 'pastas', title: 'Ñoquis c/ Tuco o Crema / Roquefort', desc: 'Acompañados de tuco suave, crema o intensa salsa roquefort', price: 7800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1621996346565-e3def6166739?auto=format&fit=crop&w=500&q=80' },
+            { id: 'pa5', cat: 'pastas', title: 'Ravioles c/ Bolognesa', desc: 'Ravioles de pollo y verdura o ricota con tuco con carne', price: 7800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1587740896339-96a76170508d?auto=format&fit=crop&w=500&q=80' },
+            { id: 'pa6', cat: 'pastas', title: 'Ravioles c/ Tuco / Crema / Salsa', desc: 'Servidos con salsa suave de tomate o crema fresca', price: 8100, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1587740896339-96a76170508d?auto=format&fit=crop&w=500&q=80' },
+            { id: 'pa7', cat: 'pastas', title: 'Sorrentinos c/ Bolognesa', desc: 'Rellenos de jamón y queso con abundante salsa bolognesa', price: 8300, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=500&q=80' },
+            { id: 'pa8', cat: 'pastas', title: 'Sorrentinos c/ Tuco / Crema / Salsa', desc: 'Sorrentinos artesanales con salsa rosa, tuco o crema de verdeo', price: 8600, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1621996346565-e3def6166739?auto=format&fit=crop&w=500&q=80' },
+
+            // POSTRES
+            { id: 'po1', cat: 'postres', title: 'Porción de Torta Chess', desc: 'Deliciosa porción de cheesecake o torta helada', price: 3800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=500&q=80' },
+            { id: 'po2', cat: 'postres', title: 'Bombón Helado', desc: 'Postre helado cubierto de chocolate crocante', price: 3200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=500&q=80' },
+            { id: 'po3', cat: 'postres', title: 'Postre "La Maga"', desc: 'Especialidad dulce de la casa con helado, dulce de leche y frutos', price: 4500, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=500&q=80' },
+            { id: 'po4', cat: 'postres', title: 'Postre Chajá', desc: 'Bizcochuelo con crema, merengue y trozos de durazno', price: 3900, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&w=500&q=80' },
+            { id: 'po5', cat: 'postres', title: 'Flan Casero', desc: 'Acompañado de dulce de leche o crema chantilly', price: 3000, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1528975604071-b4dc52a2d18c?auto=format&fit=crop&w=500&q=80' },
+            { id: 'po6', cat: 'postres', title: 'Ensalada de Frutas', desc: 'Frutas frescas de estación picadas en su almíbar', price: 0, available: true, isConsult: true, img: 'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=500&q=80' },
+
+            // CAFETERIA
+            { id: 'c1', cat: 'cafeteria', title: 'Café', desc: 'Espresso intenso preparado en el momento', price: 2100, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80' },
+            { id: 'c2', cat: 'cafeteria', title: 'Café Jarrito', desc: 'Porción doble de café espresso', price: 2400, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=500&q=80' },
+            { id: 'c3', cat: 'cafeteria', title: 'Cortado', desc: 'Café con un toque de leche vaporizada', price: 2200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1485808191679-5f86510681a2?auto=format&fit=crop&w=500&q=80' },
+            { id: 'c4', cat: 'cafeteria', title: 'Cortado Jarrito', desc: 'Café en jarrito cortado con espumosa leche', price: 2500, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=500&q=80' },
+            { id: 'c5', cat: 'cafeteria', title: 'Café con Leche', desc: 'Servido en taza grande con leche caliente', price: 2800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=500&q=80' },
+            { id: 'c6', cat: 'cafeteria', title: 'Submarino', desc: 'Leche caliente espumosa con barra de chocolate semiamargo', price: 3400, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?auto=format&fit=crop&w=500&q=80' },
+            { id: 'c7', cat: 'cafeteria', title: 'Capuchino', desc: 'Café espresso, leche vaporizada, canela y cacao', price: 3200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=500&q=80' },
+            { id: 'c8', cat: 'cafeteria', title: 'Té de Hierbas', desc: 'Variedad de tés en saquito (manzanilla, boldo, negro)', price: 1800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=500&q=80' },
+            { id: 'c9', cat: 'cafeteria', title: 'Medialunas (Unidad)', desc: 'Medialunas de manteca o grasa hojaldradas', price: 900, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=500&q=80' },
+
+            // BEBIDAS
+            { id: 'b1', cat: 'bebidas', title: 'Coca Cola (500ml)', desc: 'Original o Zero', price: 2200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b2', cat: 'bebidas', title: 'Fanta (500ml)', desc: 'Sabor Naranja refrescante', price: 2200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1624517452488-04869289c4ca?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b3', cat: 'bebidas', title: 'Sprite (500ml)', desc: 'Lima Limón', price: 2200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b4', cat: 'bebidas', title: 'Aquarius (500ml)', desc: 'Consultar sabores disponibles (Pera, Pomelo, Manzana)', price: 2100, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b5', cat: 'bebidas', title: 'Agua Mineral (500ml)', desc: 'Con gas o Sin gas', price: 1800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b6', cat: 'bebidas', title: 'Cerveza Brahma 1Litro', desc: 'Cerveza rubia helada en botella de vidrio', price: 4200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b7', cat: 'bebidas', title: 'Cerveza Heineken 1Litro', desc: 'Premium lager fría', price: 5400, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b8', cat: 'bebidas', title: 'Cerveza Stella Artois 1Litro', desc: 'Cerveza rubia suave premium', price: 5400, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b9', cat: 'bebidas', title: 'Corona Chica (330ml)', desc: 'Porrón frío servido con rodaja de limón', price: 3200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1584225064785-c62a8b43d148?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b10', cat: 'bebidas', title: 'Corona Grande (710ml)', desc: 'Botella grande para compartir con limón', price: 5800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1584225064785-c62a8b43d148?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b11', cat: 'bebidas', title: 'Lata Cerveza Brahma', desc: 'Lata individual 473ml helada', price: 2500, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b12', cat: 'bebidas', title: 'Lata Heineken / Stella', desc: 'Lata 473ml helada', price: 2900, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?auto=format&fit=crop&w=500&q=80' },
+            { id: 'b13', cat: 'bebidas', title: 'Lata Cerveza Negra', desc: 'Bock o Stout 473ml', price: 2800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?auto=format&fit=crop&w=500&q=80' },
+
+            // VINOS
+            { id: 'v1', cat: 'vinos', title: 'Vino de la Casa', desc: 'Tinto o Blanco en jarra de 1Litro', price: 4800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=500&q=80' },
+            { id: 'v2', cat: 'vinos', title: 'Fond de Cave', desc: 'Malbec / Cabernet Sauvignon 750ml', price: 9200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?auto=format&fit=crop&w=500&q=80' },
+            { id: 'v3', cat: 'vinos', title: 'Trumpeter', desc: 'Rutini Wines - Malbec Reserva 750ml', price: 11800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1586370434639-0fe43b2d32e6?auto=format&fit=crop&w=500&q=80' },
+            { id: 'v4', cat: 'vinos', title: 'Saint Felicien', desc: 'Catena Zapata - Malbec / Cabernet 750ml', price: 13500, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=500&q=80' },
+            { id: 'v5', cat: 'vinos', title: 'Los Árboles', desc: 'Navarro Correas - Malbec / Chardonnay', price: 7200, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=500&q=80' },
+            { id: 'v6', cat: 'vinos', title: 'Postales', desc: 'Del Fin del Mundo - Patagonia 750ml', price: 6800, available: true, isConsult: false, img: 'https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?auto=format&fit=crop&w=500&q=80' },
+
+            // WHISKY & LICORES
+            { id: 'l1', cat: 'licores', title: 'Whisky Seleccionado', desc: 'Consultar marcas disponibles (Red Label, Black Label, Jameson)', price: 0, available: true, isConsult: true, img: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?auto=format&fit=crop&w=500&q=80' },
+            { id: 'l2', cat: 'licores', title: 'Licores & Digestivos', desc: 'Consultar variedad en barra (Baileys, Fernet, Borghetti, Limoncello)', price: 0, available: true, isConsult: true, img: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=500&q=80' }
+        ];
+
+        // CATEGORY METADATA
+        const CATEGORIES = [
+            { id: 'todos', label: 'Todos', icon: 'fa-border-all' },
+            { id: 'entradas', label: 'Entradas', icon: 'fa-utensils' },
+            { id: 'principales', label: 'Platos Principales', icon: 'fa-drumstick-bite' },
+            { id: 'sandwiches', label: 'Sándwiches', icon: 'fa-burger' },
+            { id: 'pastas', label: 'Pastas', icon: 'fa-bowl-rice' },
+            { id: 'postres', label: 'Postres', icon: 'fa-ice-cream' },
+            { id: 'cafeteria', label: 'Cafetería', icon: 'fa-mug-hot' },
+            { id: 'bebidas', label: 'Bebidas', icon: 'fa-bottle-water' },
+            { id: 'vinos', label: 'Vinos', icon: 'fa-wine-glass' },
+            { id: 'licores', label: 'Whisky & Licores', icon: 'fa-glass-whiskey' }
+        ];
+
+        let menuItems = [];
+        let currentCategory = 'todos';
+        let searchQuery = '';
+        let isAdminMode = false;
+        let selectedOrder = {}; // { itemId: quantity }
+
+        window.onload = function() {
+            loadMenuFromStorage();
+            renderCategoryPills();
+            renderMenu();
+            setupQRCode();
+        };
+
+        function loadMenuFromStorage() {
+            try {
+                const stored = localStorage.getItem('la_maga_menu_v1');
+                if (stored) {
+                    menuItems = JSON.parse(stored);
+                } else {
+                    menuItems = [...DEFAULT_MENU_DATA];
+                    saveMenuToStorage();
+                }
+            } catch (e) {
+                console.error('Error loading menu:', e);
+                menuItems = [...DEFAULT_MENU_DATA];
+            }
+        }
+
+        function saveMenuToStorage() {
+            try {
+                localStorage.setItem('la_maga_menu_v1', JSON.stringify(menuItems));
+                showToast('¡Cambios guardados con éxito!');
+            } catch (e) {
+                alert('No se pudo guardar en el dispositivo.');
+            }
+        }
+
+        function resetMenuToDefaults() {
+            if (confirm('¿Deseas restablecer todos los precios y productos a los valores originales?')) {
+                menuItems = JSON.parse(JSON.stringify(DEFAULT_MENU_DATA));
+                saveMenuToStorage();
+                renderMenu();
+            }
+        }
+
+        function renderCategoryPills() {
+            const container = document.getElementById('category-pills');
+            container.innerHTML = CATEGORIES.map(cat => {
+                const isActive = currentCategory === cat.id;
+                return `
+                    <button onclick="selectCategory('${cat.id}')" class="px-3.5 py-2 rounded-xl border flex items-center space-x-1.5 whitespace-nowrap transition transform active:scale-95 ${
+                        isActive 
+                            ? 'bg-brand-gold text-black font-bold border-brand-gold shadow-md' 
+                            : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-neutral-700'
+                    }">
+                        <i class="fa-solid ${cat.icon} text-xs"></i>
+                        <span>${cat.label}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectCategory(catId) {
+            currentCategory = catId;
+            renderCategoryPills();
+            renderMenu();
+        }
+
+        function renderMenu() {
+            const container = document.getElementById('menu-sections-container');
+            const noResults = document.getElementById('no-results');
+
+            // Filter items based on category and search query
+            const filtered = menuItems.filter(item => {
+                const matchesCat = (currentCategory === 'todos' || item.cat === currentCategory);
+                const query = searchQuery.toLowerCase().trim();
+                const matchesSearch = !query || 
+                    item.title.toLowerCase().includes(query) || 
+                    item.desc.toLowerCase().includes(query);
+                return matchesCat && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            } else {
+                noResults.classList.add('hidden');
+            }
+
+            // Group filtered items by category if 'todos' is selected
+            let categoriesToRender = [];
+            if (currentCategory === 'todos' && !searchQuery) {
+                categoriesToRender = CATEGORIES.filter(c => c.id !== 'todos');
+            } else {
+                categoriesToRender = CATEGORIES.filter(c => c.id === currentCategory || currentCategory === 'todos');
+            }
+
+            let html = '';
+
+            categoriesToRender.forEach(cat => {
+                const catItems = filtered.filter(i => i.cat === cat.id);
+                if (catItems.length === 0) return;
+
+                html += `
+                    <section id="cat-sec-${cat.id}" class="space-y-4">
+                        <div class="flex items-center space-x-2 border-b border-neutral-800 pb-2">
+                            <div class="w-8 h-8 rounded-lg bg-brand-gold/10 border border-brand-gold/30 flex items-center justify-center text-brand-gold">
+                                <i class="fa-solid ${cat.icon} text-sm"></i>
+                            </div>
+                            <h2 class="text-xl font-bold font-serif text-neutral-100">${cat.label}</h2>
+                            <span class="text-xs text-neutral-500 font-sans">(${catItems.length})</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            ${catItems.map(item => renderMenuItemCard(item)).join('')}
+                        </div>
+                    </section>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function formatPrice(price, isConsult) {
+            if (isConsult || price === 0 || price === null || price === undefined) {
+                return '<span class="text-xs font-semibold text-amber-400 uppercase tracking-wider">Consultar</span>';
+            }
+            return `$${Number(price).toLocaleString('es-AR')}`;
+        }
+
+        function renderMenuItemCard(item) {
+            const qty = selectedOrder[item.id] || 0;
+            const isOutOfStock = !item.available;
+
+            return `
+                <div class="bg-neutral-900 border border-neutral-800/90 rounded-2xl p-3.5 flex space-x-3.5 relative overflow-hidden transition duration-300 hover:border-neutral-700 shadow-md ${isOutOfStock ? 'opacity-60' : ''}">
+                    <!-- Image preview -->
+                    <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-neutral-800 flex-shrink-0 relative">
+                        <img src="${item.img || 'https://placehold.co/200x200/2a2a2a/d4af37?text=La+Maga'}" 
+                             alt="${item.title}" 
+                             onerror="this.src='https://placehold.co/200x200/2a2a2a/d4af37?text=La+Maga'" 
+                             class="w-full h-full object-cover">
+                        ${isOutOfStock ? '<div class="absolute inset-0 bg-black/70 flex items-center justify-center"><span class="text-[10px] font-bold text-rose-400 uppercase tracking-widest px-1 text-center">Agotado</span></div>' : ''}
+                    </div>
+
+                    <!-- Details -->
+                    <div class="flex-1 flex flex-col justify-between min-w-0">
+                        <div>
+                            <div class="flex items-start justify-between gap-1">
+                                <h3 class="font-bold text-sm text-neutral-100 truncate leading-snug">${item.title}</h3>
+                                ${isAdminMode ? `
+                                    <button onclick="openEditModal('${item.id}')" class="text-amber-400 hover:text-amber-300 p-1 text-xs">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <p class="text-xs text-neutral-400 line-clamp-2 mt-1 leading-relaxed">${item.desc || ''}</p>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2 mt-1 border-t border-neutral-800/60">
+                            <!-- Editable price trigger -->
+                            <div onclick="${isAdminMode ? `openEditModal('${item.id}')` : ''}" class="${isAdminMode ? 'cursor-pointer hover:underline text-amber-300' : ''}">
+                                <span class="text-base font-bold text-brand-gold">${formatPrice(item.price, item.isConsult)}</span>
+                                ${isAdminMode ? '<i class="fa-solid fa-pencil text-[9px] ml-1 text-amber-400"></i>' : ''}
+                            </div>
+
+                            <!-- Quantity Counter for customer order tray -->
+                            ${!isOutOfStock ? `
+                                <div class="flex items-center space-x-1.5 bg-neutral-800/80 border border-neutral-700/80 rounded-lg p-1">
+                                    <button onclick="updateQty('${item.id}', -1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-neutral-300 hover:bg-neutral-700 transition">
+                                        <i class="fa-solid fa-minus text-[10px]"></i>
+                                    </button>
+                                    <span class="w-5 text-center text-xs font-bold text-neutral-100">${qty}</span>
+                                    <button onclick="updateQty('${item.id}', 1)" class="w-6 h-6 rounded bg-brand-gold text-black flex items-center justify-center text-xs font-bold hover:bg-amber-400 transition">
+                                        <i class="fa-solid fa-plus text-[10px]"></i>
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleSearch(val) {
+            searchQuery = val;
+            const clearBtn = document.getElementById('clear-search');
+            if (val) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+            renderMenu();
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            searchQuery = '';
+            document.getElementById('clear-search').classList.add('hidden');
+            renderMenu();
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleAdminMode() {
+            isAdminMode = !isAdminMode;
+            const adminBar = document.getElementById('admin-bar');
+            const editIndicator = document.getElementById('edit-indicator');
+            const adminBtnText = document.getElementById('admin-btn-text');
+
+            if (isAdminMode) {
+                adminBar.classList.remove('hidden');
+                editIndicator.classList.remove('hidden');
+                adminBtnText.textContent = 'Modo Edición ON';
+                showToast('Modo edición activado. Toca cualquier precio para editar.');
+            } else {
+                adminBar.classList.add('hidden');
+                editIndicator.classList.add('hidden');
+                adminBtnText.textContent = 'Editar Precios';
+            }
+            renderMenu();
+        }
+
+        function updateQty(itemId, change) {
+            const current = selectedOrder[itemId] || 0;
+            const updated = Math.max(0, current + change);
+            if (updated === 0) {
+                delete selectedOrder[itemId];
+            } else {
+                selectedOrder[itemId] = updated;
+            }
+            updateOrderBadge();
+            renderMenu();
+            renderOrderDrawer();
+        }
+
+        function updateOrderBadge() {
+            const count = Object.values(selectedOrder).reduce((a, b) => a + b, 0);
+            document.getElementById('order-badge').textContent = count;
+        }
+
+        function clearOrder() {
+            selectedOrder = {};
+            updateOrderBadge();
+            renderMenu();
+            renderOrderDrawer();
+        }
+
+        function openOrderDrawer() {
+            renderOrderDrawer();
+            document.getElementById('order-drawer').classList.remove('hidden');
+        }
+
+        function closeOrderDrawer() {
+            document.getElementById('order-drawer').classList.add('hidden');
+        }
+
+        function renderOrderDrawer() {
+            const listContainer = document.getElementById('order-items-list');
+            const totalPriceEl = document.getElementById('order-total-price');
+
+            const itemIds = Object.keys(selectedOrder);
+            if (itemIds.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-12 text-neutral-500 space-y-2">
+                        <i class="fa-solid fa-cart-flatbed text-3xl"></i>
+                        <p class="text-xs">No has seleccionado ningún plato o bebida todavía.</p>
+                    </div>
+                `;
+                totalPriceEl.textContent = '$0';
+                return;
+            }
+
+            let total = 0;
+            let html = '';
+
+            itemIds.forEach(id => {
+                const item = menuItems.find(i => i.id === id);
+                if (!item) return;
+                const qty = selectedOrder[id];
+                const subtotal = (item.isConsult ? 0 : (item.price || 0)) * qty;
+                total += subtotal;
+
+                html += `
+                    <div class="flex items-center justify-between bg-neutral-800/60 p-3 rounded-xl border border-neutral-800 text-xs">
+                        <div class="flex-1 pr-2">
+                            <p class="font-bold text-neutral-100">${item.title}</p>
+                            <p class="text-neutral-400">${item.isConsult ? 'Consultar' : `$${item.price.toLocaleString('es-AR')} c/u`}</p>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            <button onclick="updateQty('${item.id}', -1)" class="w-6 h-6 rounded bg-neutral-700 text-white flex items-center justify-center font-bold">
+                                -
+                            </button>
+                            <span class="font-bold text-brand-gold text-sm">${qty}</span>
+                            <button onclick="updateQty('${item.id}', 1)" class="w-6 h-6 rounded bg-brand-gold text-black flex items-center justify-center font-bold">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+            totalPriceEl.textContent = `$${total.toLocaleString('es-AR')}`;
+        }
+
+        function openEditModal(itemId) {
+            const item = menuItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            document.getElementById('modal-title').textContent = 'Editar Ítem del Menú';
+            document.getElementById('form-item-id').value = item.id;
+            document.getElementById('form-item-title').value = item.title;
+            document.getElementById('form-item-category').value = item.cat;
+            document.getElementById('form-item-price').value = item.price || '';
+            document.getElementById('form-item-desc').value = item.desc || '';
+            document.getElementById('form-item-image').value = item.img || '';
+            document.getElementById('form-item-consult').checked = !!item.isConsult;
+            document.getElementById('form-item-stock').checked = item.available !== false;
+            
+            document.getElementById('btn-delete-item').classList.remove('hidden');
+            document.getElementById('edit-item-modal').classList.remove('hidden');
+        }
+
+        function openAddNewItemModal() {
+            document.getElementById('modal-title').textContent = 'Agregar Nuevo Producto';
+            document.getElementById('form-item-id').value = '';
+            document.getElementById('form-item-title').value = '';
+            document.getElementById('form-item-category').value = currentCategory !== 'todos' ? currentCategory : 'principales';
+            document.getElementById('form-item-price').value = '';
+            document.getElementById('form-item-desc').value = '';
+            document.getElementById('form-item-image').value = '';
+            document.getElementById('form-item-consult').checked = false;
+            document.getElementById('form-item-stock').checked = true;
+
+            document.getElementById('btn-delete-item').classList.add('hidden');
+            document.getElementById('edit-item-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-item-modal').classList.add('hidden');
+        }
+
+        function saveItemForm(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('form-item-id').value;
+            const title = document.getElementById('form-item-title').value;
+            const cat = document.getElementById('form-item-category').value;
+            const price = parseFloat(document.getElementById('form-item-price').value) || 0;
+            const desc = document.getElementById('form-item-desc').value;
+            const img = document.getElementById('form-item-image').value;
+            const isConsult = document.getElementById('form-item-consult').checked;
+            const available = document.getElementById('form-item-stock').checked;
+
+            if (id) {
+                // Update existing
+                const index = menuItems.findIndex(i => i.id === id);
+                if (index !== -1) {
+                    menuItems[index] = { ...menuItems[index], title, cat, price, desc, img, isConsult, available };
+                }
+            } else {
+                // Create new
+                const newId = 'item_' + Date.now();
+                menuItems.push({ id: newId, title, cat, price, desc, img, isConsult, available });
+            }
+
+            saveMenuToStorage();
+            closeEditModal();
+            renderMenu();
+        }
+
+        function deleteCurrentItem() {
+            const id = document.getElementById('form-item-id').value;
+            if (!id) return;
+            if (confirm('¿Estás seguro de eliminar este producto del menú?')) {
+                menuItems = menuItems.filter(i => i.id !== id);
+                saveMenuToStorage();
+                closeEditModal();
+                renderMenu();
+            }
+        }
+
+        function setupQRCode() {
+            const container = document.getElementById('qrcode-container');
+            container.innerHTML = '';
+            new QRCode(container, {
+                text: window.location.href,
+                width: 160,
+                height: 160,
+                colorDark : "#121212",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+
+        function openQRModal() {
+            setupQRCode();
+            document.getElementById('qr-modal').classList.remove('hidden');
+        }
+
+        function closeQRModal() {
+            document.getElementById('qr-modal').classList.add('hidden');
+        }
+
+        function printMenuQR() {
+            window.print();
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-20 right-4 z-50 bg-brand-gold text-black font-bold px-4 py-2.5 rounded-xl shadow-2xl text-xs transition transform duration-300 translate-y-0 opacity-100 flex items-center space-x-2';
+            toast.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>${msg}</span>`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
